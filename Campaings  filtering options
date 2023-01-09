@@ -1,0 +1,53 @@
+import React, { ChangeEventHandler, FC } from "react";
+import "../campaignsView.scss";
+
+const FilterOptions: FC<{
+  sortCallback: ChangeEventHandler<HTMLSelectElement>;
+  orderCallBack: ChangeEventHandler<HTMLSelectElement>;
+  sortStateValue: string;
+  orderStateValue: string;
+}> = ({ sortCallback, sortStateValue, orderCallBack, orderStateValue }) => {
+  const sortOptions = [
+    { value: "0", text: "Active" },
+    { value: "1", text: "Date" },
+    { value: "", text: "Alphabetically" },
+  ];
+
+  const orderOptions = [
+    { value: "0", text: "Descending", number: 3 },
+    { value: "1", text: "Ascending", number: 4 },
+  ];
+
+  return (
+    <>
+      <select
+        value={`${sortStateValue}`}
+        className="active"
+        onChange={sortCallback}
+        data-testid="sort-type"
+        id="sort-type"
+      >
+        {sortOptions.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.text}
+          </option>
+        ))}
+      </select>
+      <select
+        value={`${orderStateValue}`}
+        className="active"
+        onChange={orderCallBack}
+        data-testid="order-type"
+        id="order-type"
+      >
+        {orderOptions.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.text}
+          </option>
+        ))}
+      </select>
+    </>
+  );
+};
+
+export default FilterOptions;
