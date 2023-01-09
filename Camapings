@@ -1,0 +1,134 @@
+import React, { useContext, useEffect, useState } from "react";
+import "./campaignsView.scss";
+import { ReactComponent as AddCampaignIcon } from "../../Globals/Svgs/plus-square.svg";
+import CampaignCard from "../../Components/CampaignCard/CampaignCard";
+import { CampaignsContext } from "../../Globals/Contexts/CampaignsContext";
+import { Link } from "react-router-dom";
+import { useMsalAuthentication } from "@azure/msal-react";
+import { InteractionType } from "@azure/msal-browser";
+import FilterOptions from "../CampaignsView/FilterOptions/FilterOptions";
+import { AccountRolesContext } from "../../Globals/Contexts/AccountRolesContext";
+import ReactPaginate from "react-paginate";
+
+const CampaignsView = () => {
+  const campaignCtx = useContext(CampaignsContext);
+  const accountCtx = useContext(AccountRolesContext);
+  accountCtx.checkRoles(["ProgramManager"]);
+  useMsalAuthentication(InteractionType.Redirect);
+
+  const [sortOptionValue, setSortStateValue] = useState<string>("0");
+  const [orderStateValue, setOrderStateValue] = useState<string>("0");
+  const [currentPageNumber, setCurrentPageNumber] = useState<number>(1);
+  const [pageSize, setPageSize] = useState<string>("10");
+
+  useEffect(() => {
+    if (campaignCtx.campaign.length === 0) {
+      campaignCtx.fetchData(sortOptionValue, orderStateValue, currentPageNumber, pageSize);
+    }
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (campaignCtx.campaign.length > 0) {
+        campaignCtx.campaign = [];
+      }
+    };
+  });
+
+  useEffect(() => {
+    campaignCtx.fetchData(sortOptionValue, orderStateValue, currentPageNumber, pageSize);
+    window.scrollTo(0, 0);
+  }, [sortOptionValue, orderStateValue, currentPageNumber, pageSize]);
+
+  const handlePageChange = (pageObject: { selected: number }) => {
+    let pageNumber = pageObject.selected + 1;
+    setCurrentPageNumber(pageNumber);
+  };
+
+  const handleChanges = (event: React.ChangeEvent<HTMLSelectElement>, changeType: string) => {
+    switch (changeType) {
+      case "sort":
+        setSortStateValue(event.target.value);
+        break;
+      case "order":
+        setOrderStateValue(event.target.value);
+        break;
+      case "pageSize":
+        setPageSize(event.target.value);
+        break;
+    }
+  };
+
+  return (
+    <fieldset>
+      <legend>
+        <h3>Campaigns</h3>
+      </legend>
+      {campaignCtx.error ? (
+        <p className="error-paragraph">{campaignCtx.error}</p>
+      ) : (
+        <>
+          {!campaignCtx.campaign.length ? (
+            <div className="campaigns-control-panel">
+              <h2>Loading...</h2>
+              <div className="add-campaign-container">
+                <h4>New Campaign</h4>
+                <Link to="/campaigns/settings">
+                  <AddCampaignIcon className="icon-small" />
+                </Link>
+              </div>
+            </div>
+          ) : (
+            <div className="campaigns-control-panel">
+              <div className="main-section">
+                <div className="filter-options">
+                  <h4>Sort by:</h4>
+                  <FilterOptions
+                    sortCallback={(event) => handleChanges(event, "sort")}
+                    orderCallBack={(event) => handleChanges(event, "order")}
+                    orderStateValue={orderStateValue}
+                    sortStateValue={sortOptionValue}
+                  />
+                </div>
+                <div className="add-campaign-container">
+                  <h4>New Campaign</h4>
+                  <Link to="/campaigns/settings" id="campaign-create-link">
+                    <AddCampaignIcon className="icon-small" />
+                  </Link>
+                </div>
+              </div>
+            </div>
+          )}
+        </>
+      )}
+      <div className="campaigns-grid">
+        {campaignCtx.campaign.map((campaign: Campaign) => (
+          <CampaignCard key={campaign.id} campaign={campaign} />
+        ))}
+      </div>
+      <div className="pagination-section">
+        <ReactPaginate
+          pageCount={campaignCtx.pageCount}
+          className="react-paginate"
+          onPageChange={handlePageChange}
+          previousLabel="<"
+          nextLabel=">"
+        />
+        <select
+          name="pageSize"
+          id="page-size"
+          value={pageSize}
+          onChange={(event) => handleChanges(event, "pageSize")}
+          data-testid="page-size-select"
+        >
+          <option value="10">10</option>
+          <option value="20">20</option>
+          <option value="50">50</option>
+          <option value="100">All</option>
+        </select>
+      </div>
+    </fieldset>
+  );
+};
+
+export default CampaignsView;
